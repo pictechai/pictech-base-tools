@@ -1,4 +1,4 @@
-package com.xiaozhi.live.platform.service.test;
+package com.pictech;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
