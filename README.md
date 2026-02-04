@@ -6,13 +6,13 @@
 
 本项目提供了一套轻量级的 Java 示例代码，用于演示如何对接和调用 PicTech 的图片处理 API（同步接口）。
 
-示例涵盖了 **图片智能缩放 (Resize)**、**区域裁剪 (Crop)** 以及 **高级水印合成 (Watermark)** 功能，并包含了完整的签名计算逻辑。
+示例涵盖了 **图片智能缩放 (Resize)**、**区域裁剪 (Crop)**、**高级水印合成 (Watermark)** 以及 **OCR 文字识别** 功能，并包含了完整的签名计算逻辑。
 
 ## 📋 项目特点
 
 *   **零第三方依赖**：核心逻辑完全使用 Java 11+ 标准库 (`java.net.http`, `javax.crypto`) 编写，无需引入 Gson、Jackson 或 Apache HttpClient 即可运行。
-*   **完整流程**：包含 参数排序 -> HMAC-SHA256 签名 -> JSON 构建 -> HTTP 请求 -> Base64 解码 -> 图片保存。
-*   **场景丰富**：覆盖了所有基础工具接口及所有内置水印模板的测试。
+*   **完整流程**：包含 参数排序 -> HMAC-SHA256 签名 -> JSON 构建 -> HTTP 请求 -> 结果解析（包括 Unicode 转中文）。
+*   **场景丰富**：覆盖了基础图像处理、复杂水印合成及文字识别场景。
 
 ## 🛠 环境要求
 
@@ -24,7 +24,8 @@
 ```text
 src/main/java/com/pictech/
 ├── PicTechApiTest.java       # [基础测试] 涵盖缩放、裁剪、基础水印及错误处理测试
-└── PicTechWatermarkTest.java # [进阶测试] 专门用于测试所有水印模板效果及参数覆盖逻辑
+├── PicTechWatermarkTest.java # [进阶测试] 专门用于测试所有水印模板效果及参数覆盖逻辑
+└── PicTechOcrTest.java       # [OCR测试] 演示图片文字识别及结果解析
 pom.xml                       # Maven 配置文件
 README.md                     # 项目说明文档
 ```
@@ -33,14 +34,12 @@ README.md                     # 项目说明文档
 
 在运行代码之前，**必须**修改 Java 文件中的配置区域，填入您自己的 API 凭证。
 
-请打开 `src/main/java/com/pictech/PicTechApiTest.java` 和 `PicTechWatermarkTest.java`，找到以下代码段并修改：
+请打开 `src/main/java/com/pictech/` 目录下的 `PicTechApiTest.java`、`PicTechWatermarkTest.java` 或 `PicTechOcrTest.java`，找到以下代码段并修改：
 
 ```java
 // ================= 配置区域 =================
-private static final String API_HOST = "https://www.pictech.top/pictech/commonapi";
-
 // ⚠️ 请务必替换为您自己的 AccountId 和 SecretKey
-private static final String ACCOUNT_ID = "your_ACCOUNT_ID"; 
+private static final String ACCOUNT_ID = "pic_YOUR_ID"; 
 private static final String SECRET_KEY = "your_SECRET_KEY";
 // ===========================================
 ```
@@ -51,9 +50,8 @@ private static final String SECRET_KEY = "your_SECRET_KEY";
 
 ### 方法一：使用 IDE (IntelliJ IDEA / Eclipse) - 推荐
 1.  将项目导入 IDE 作为 Maven 项目。
-2.  找到 `src/main/java/com/pictech/PicTechApiTest.java`。
+2.  找到对应的 Java 文件（如 `PicTechOcrTest.java`）。
 3.  点击 `main` 方法旁边的运行按钮 (Run)。
-4.  同样的方法运行 `PicTechWatermarkTest.java`。
 
 ### 方法二：使用 Maven 命令行
 在项目根目录下（`pom.xml` 所在目录），执行以下命令：
@@ -68,30 +66,31 @@ mvn clean compile exec:java -Dexec.mainClass="com.pictech.PicTechApiTest"
 mvn clean compile exec:java -Dexec.mainClass="com.pictech.PicTechWatermarkTest"
 ```
 
+**3. 运行 OCR 文字识别测试 (PicTechOcrTest):**
+```bash
+mvn clean compile exec:java -Dexec.mainClass="com.pictech.PicTechOcrTest"
+```
+
 ## 🧪 测试用例说明
 
 ### 1. PicTechApiTest (基础功能)
-运行后将在项目根目录生成以下图片：
+运行后将在项目根目录生成一系列处理后的图片（如缩放、裁剪、基础水印等）：
 *   `result_1_resize_50pct.jpg`: 按 0.5 比例缩放。
 *   `result_2_watermark_pattern.jpg`: 全图斜向平铺防盗水印。
-*   `result_3_watermark_approved.jpg`: 中心“审核通过”印章。
-*   `result_4_fixed_200x200.png`: 强制拉伸至 200x200 并输出为 PNG。
-*   `result_5_crop_300x150.jpg`: 指定坐标裁剪。
-*   `result_6_corners.jpg`: 四角水印测试。
-*   `result_7_width_300.jpg`: 仅指定宽度缩放（高度自适应）。
+*   ... (以及其他裁剪和格式转换测试)
 
 ### 2. PicTechWatermarkTest (水印专项)
 该测试会遍历系统支持的 10 种水印模板，生成如下文件：
 *   `test_01_single_subtle_light.jpg`: 右下角通用版权
-*   `test_02_special_multiline.jpg`: 左下角多行文字
-*   `test_03_single_strong_red.jpg`: 中心红色警示
-*   `test_04_multiple_corners.jpg`: 四角水印
-*   `test_05_multiple_edges.jpg`: 四边居中水印
-*   `test_06_pattern_subtle.jpg`: 正向平铺
 *   `test_07_pattern_diagonal_da.jpg`: 斜向防盗平铺
-*   `test_08_special_photography.jpg`: 摄影参数风格
 *   `test_09_special_confidential.jpg`: 绝密文件印章
-*   `test_10_special_approved.jpg`: 审核通过印章
+*   ... (以及其他多种水印风格)
+
+### 3. PicTechOcrTest (OCR 文字识别)
+该测试不生成图片文件，而是将识别结果直接打印在控制台：
+*   演示如何构建 JSON 请求体。
+*   演示如何处理 API 返回的 Unicode 编码字符串。
+*   **控制台输出**：格式化后的识别文字列表、RequestID 及原始 JSON 响应。
 
 ## 📝 注意事项
 
